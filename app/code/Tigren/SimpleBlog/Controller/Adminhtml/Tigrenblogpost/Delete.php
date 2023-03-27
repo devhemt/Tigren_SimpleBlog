@@ -21,7 +21,7 @@ class Delete extends \Tigren\SimpleBlog\Controller\Adminhtml\Tigrenblogpost
         $resultRedirect = $this->resultRedirectFactory->create();
         // check if we know what should be deleted
         $id = $this->getRequest()->getParam('tigren_blog_post_id');
-        dd($id);
+        //        dd($id);
         if ($id) {
             try {
                 // init model and delete

@@ -102,7 +102,7 @@
         <column name="title">
             <settings>
                 <filter>text</filter>
-                <label translate="true">title</label>
+                <label translate="true">Title</label>
                 <editor>
                     <editorType>text</editorType>
                     <validation>
@@ -118,10 +118,10 @@
                 <resizeDefaultWidth>107</resizeDefaultWidth>
             </settings>
         </actionsColumn>
-        <column name="post_image">
+        <column name="list_image">
             <settings>
                 <filter>text</filter>
-                <label translate="true">post_image</label>
+                <label translate="true">List Image</label>
                 <editor>
                     <editorType>text</editorType>
                     <validation>
@@ -137,7 +137,7 @@
                     <item name="sortable" xsi:type="boolean">false</item>
                     <item name="altField" xsi:type="string">name</item>
                     <item name="has_preview" xsi:type="string">1</item>
-                    <item name="label" xsi:type="string" translate="true">Image</item>
+                    <item name="label" xsi:type="string" translate="true">Post Image</item>
                     <item name="sortOrder" xsi:type="number">20</item>
                 </item>
             </argument>
@@ -145,7 +145,7 @@
         <column name="full_content">
             <settings>
                 <filter>text</filter>
-                <label translate="true">full_content</label>
+                <label translate="true">Full Content</label>
                 <bodyTmpl>ui/grid/cells/html</bodyTmpl>
                 <editor>
                     <editorType>text</editorType>
@@ -158,7 +158,7 @@
         <column name="short_content">
             <settings>
                 <filter>text</filter>
-                <label translate="true">short_content</label>
+                <label translate="true">Short Content</label>
                 <editor>
                     <editorType>text</editorType>
                     <validation>
@@ -170,7 +170,7 @@
         <column name="author">
             <settings>
                 <filter>text</filter>
-                <label translate="true">author</label>
+                <label translate="true">Author</label>
                 <editor>
                     <editorType>text</editorType>
                     <validation>
@@ -182,7 +182,7 @@
         <column name="published_at">
             <settings>
                 <filter>text</filter>
-                <label translate="true">published_at</label>
+                <label translate="true">Published At</label>
                 <editor>
                     <editorType>text</editorType>
                     <validation>

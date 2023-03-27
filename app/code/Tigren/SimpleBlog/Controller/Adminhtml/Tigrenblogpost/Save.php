@@ -8,11 +8,13 @@ declare(strict_types=1);
 namespace Tigren\SimpleBlog\Controller\Adminhtml\Tigrenblogpost;
 
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\App\ResourceConnection;
 
 class Save extends \Magento\Backend\App\Action
 {
 
     protected $dataPersistor;
+    protected $_resource;
 
     /**
      * @param \Magento\Backend\App\Action\Context $context
@@ -20,9 +22,11 @@ class Save extends \Magento\Backend\App\Action
      */
     public function __construct(
         \Magento\Backend\App\Action\Context $context,
+        ResourceConnection $resource,
         \Magento\Framework\App\Request\DataPersistorInterface $dataPersistor
     ) {
         $this->dataPersistor = $dataPersistor;
+        $this->_resource = $resource;
         parent::__construct($context);
     }
 
@@ -33,17 +37,11 @@ class Save extends \Magento\Backend\App\Action
      */
     public function execute()
     {
-        $model = $this->_objectManager->create(\Tigren\SimpleBlog\Model\ResourceModel\TigrenBlogPost\CollectionFactory::class);
-        $model = $model->create();
-        $items = $model->getItems();
-        $lastId;
-        foreach ($items as $m) {
-            $lastId = $m->getData()['tigren_blog_post_id'];
-        }
 
         /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
         $resultRedirect = $this->resultRedirectFactory->create();
         $data = $this->getRequest()->getPostValue();
+        //        dd(isset($data['tigren_blog_post_id']));
         if ($data) {
             $id = $this->getRequest()->getParam('tigren_blog_post_id');
 
@@ -55,71 +53,94 @@ class Save extends \Magento\Backend\App\Action
             date_default_timezone_set('Asia/Ho_Chi_Minh');
             $date = date('d-m-y h:i:s');
             $data['published_at'] = $date;
+            
+            if (isset($data['tigren_blog_post_id'])) {
+                $data['list_image'] = [];
+                $flag = [];
+                foreach ($data['list_image'] as $i) {
+                    if (isset($i['name']) && $i['name'] != '') {
+                        try {
+                            $uploader = $this->_fileUploaderFactory->create(['fileId' => 'list_image']);
+                            $uploader->setAllowedExtensions(['jpg', 'jpeg', 'gif', 'png']);
+                            $uploader->setAllowRenameFiles(true);
+                            $uploader->setFilesDispersion(true);
+                            $path = $this->_objectManager->get('Magento\Store\Model\StoreManagerInterface')
+                                ->getStore()
+                                ->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA);
+                            $result = $uploader->save($path . 'list_image');
+                            array_push($flag, $result['file']);
+                        } catch (\Exception $e) {
+                            array_push($flag, $i['name']);
+                        }
+                    } else {
+                        if (isset($i['value'])) {
+                            array_push($flag, $i['value']);
+                        } else {
+                            $data['list_image'] = '';
+                        }
+                    }
+                }
+                $data['list_image'] = implode(",", $flag);
 
-            //            dd($data);
-            $data['list_image'] = [];
-            foreach ($data['image'] as $i) {
-                if (isset($i['name']) && $i['name'] != '') {
+                $image = $data['post_image'][0];
+                if (isset($image['name']) && $image['name'] != '') {
                     try {
-                        $uploader = $this->_fileUploaderFactory->create(['fileId' => 'list_image']);
+                        $uploader = $this->_fileUploaderFactory->create(['fileId' => 'post_image']);
                         $uploader->setAllowedExtensions(['jpg', 'jpeg', 'gif', 'png']);
                         $uploader->setAllowRenameFiles(true);
                         $uploader->setFilesDispersion(true);
                         $path = $this->_objectManager->get('Magento\Store\Model\StoreManagerInterface')
                             ->getStore()
                             ->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA);
-                        $result = $uploader->save($path . 'list_image');
-                        array_push($data['list_image'], $result['file']);
-                        //                        $data['list_image'] = $result['file'];
+                        $result = $uploader->save($path . 'post_image');
+                        $data['post_image'] = $result['file'];
                     } catch (\Exception $e) {
-                        array_push($data['list_image'], $i['name']);
-                        //                        $data['list_image'] = $i['name'];
+                        $data['post_image'] = $image['name'];
                     }
                 } else {
                     if (isset($image['value'])) {
-                        array_push($data['list_image'], $i['value']);
-                        //                        $data['list_image'] = $i['value'];
+                        $data['post_image'] = $image['value'];
                     } else {
-                        $data['list_image'] = '';
+                        $data['post_image'] = '';
                     }
                 }
             }
-            $data['list_image'] = implode(",", $data['list_image']);
-            //            dd($data['list_image']);
-
-            $image = $data['post_image'][0];
-            if (isset($image['name']) && $image['name'] != '') {
-                try {
-                    $uploader = $this->_fileUploaderFactory->create(['fileId' => 'post_image']);
-                    $uploader->setAllowedExtensions(['jpg', 'jpeg', 'gif', 'png']);
-                    $uploader->setAllowRenameFiles(true);
-                    $uploader->setFilesDispersion(true);
-                    $path = $this->_objectManager->get('Magento\Store\Model\StoreManagerInterface')
-                        ->getStore()
-                        ->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA);
-                    $result = $uploader->save($path . 'post_image');
-                    $data['post_image'] = $result['file'];
-                } catch (\Exception $e) {
-                    $data['post_image'] = $image['name'];
-                }
-            } else {
-                if (isset($image['value'])) {
-                    $data['post_image'] = $image['value'];
-                } else {
-                    $data['post_image'] = '';
-                }
-            }
-
 
             $model->setData($data);
 
             try {
                 $model->save();
-                $link = $this->_objectManager->create(\Tigren\SimpleBlog\Model\Link::class)->load($id);
-                $linkData['post_id'] = $lastId;
-                $linkData['category_id'] = $data['category'];
-                $link->setData($linkData);
-                $link->save();
+                $model = $this->_objectManager->create(\Tigren\SimpleBlog\Model\ResourceModel\TigrenBlogPost\CollectionFactory::class);
+                $model = $model->create();
+                $items = $model->getItems();
+                $lastId;
+                foreach ($items as $m) {
+                    $lastId = $m->getData()['tigren_blog_post_id'];
+                }
+                if (isset($data['tigren_blog_post_id'])) {
+                    $lastId = $data['tigren_blog_post_id'];
+                }
+
+                $conn = $this->_resource->getConnection();
+                $select = $conn->select()
+                    ->from(['so' => $this->_resource->getTableName('tigren_blog_category_post')])
+                    ->where('so.category_id = ' . $data['category']);
+                $result = $conn->fetchAll($select);
+                $edit = false;
+                foreach ($result as $r) {
+                    if ($r['post_id'] == 12) {
+                        $edit = true;
+                    }
+                }
+
+                if (!$edit) {
+                    $link = $this->_objectManager->create(\Tigren\SimpleBlog\Model\Link::class)->load($id);
+                    $linkData['post_id'] = $lastId;
+                    $linkData['category_id'] = $data['category'];
+                    $link->setData($linkData);
+                    $link->save();
+                }
+
                 $this->messageManager->addSuccessMessage(__('You saved the Tigren Blog Post.'));
                 $this->dataPersistor->clear('tigren_simpleblog_tigren_blog_post');
 
